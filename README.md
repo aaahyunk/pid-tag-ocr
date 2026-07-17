@@ -174,6 +174,32 @@ Ground Truth가 있는 경우:
 - 
 Ground Truth가 없는 경우에는 'N/A'를 반환하여 근거 없는 성능 추정을 하지 않습니다.
 
+### 예시 결과 — `cache/V01_03_033_117_3.csv` (문법: 30장 전체 학습 기준)
+
+**[표1] 운영 지표** (gold 불필요 · 전체 82개 태그 후보 기준)
+
+| 지표 | 값 |
+|---|---|
+| 태그 후보 (n) | 82 |
+| 계층분포 | vendor 28 · drawing 23 · isa 11 · reject 20 |
+| 자동 결정률 | 75.6% (62/82) |
+| 사람 검토율 | 24.4% (20/82) |
+
+**[표2] 정확도 지표** (gold 확보된 64건 기준)
+
+| # | 지표 | 값 |
+|---|---|---|
+| 1 | Raw OCR Character Accuracy | 98.3% |
+| 2 | Grammar-constrained Character Accuracy | 99.9% |
+| 3 | Exact Tag Match | 98.4% |
+| 4 | Auto-approval Precision | 100.0% |
+| 5 | Rule-violation Detection Rate | 100.0% |
+| 6 | Human Review Rate (n=64 기준) | 3.1% |
+
+> [표1]과 [표2]의 n이 다른 이유: [표1]은 gold 없이 82건 전체(반려 포함)를 대상으로 한 운영 지표이고,
+> [표2]는 사람이 실제로 검수해 gold를 확보한 64건 서브셋에서만 계산 가능한 정확도 지표입니다.
+> 나머지 18건은 아직 사람 검토가 끝나지 않은 blank(REVIEW) 상태라 gold가 없어 [표2] 분모에서 제외됩니다.
+
 ---
 
 ## 표준 (Truth-based)
