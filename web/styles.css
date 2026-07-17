@@ -31,6 +31,11 @@ button{font-family:inherit;}
   font-family:var(--f-mono); font-size:.7rem; letter-spacing:.05em; color:var(--cyan);
   border:1px solid var(--cyan); border-radius:3px; padding:.3rem .55rem;
 }
+.file-badge{
+  font-family:var(--f-mono); font-size:.7rem; letter-spacing:.02em; color:var(--muted);
+  border:1px solid var(--bezel); border-radius:3px; padding:.3rem .55rem; max-width:16rem;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 
 .btn{
   font-family:var(--f-mono); font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; font-weight:700;

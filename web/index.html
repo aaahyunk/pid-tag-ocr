@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>P&amp;ID 태그 관제반 — pid_tag_ocr</title>
+<title>라벨링 없는 P&amp;ID 도면 태그의 추출 자동화 및 자기지도 OCR</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <div class="topbar-title">
-        <span class="brand">P&amp;ID 태그 관제반</span>
+        <span class="brand">라벨링 없는 P&amp;ID 도면 태그의 추출 자동화 및 자기지도 OCR</span>
         <span class="brand-sub">4계층 문법 디코더 · 브라우저 실행 · 서버 없음</span>
       </div>
       <div class="topbar-actions">
+        <span id="fileNameBadge" class="file-badge" hidden></span>
         <span id="vendorBadge" class="vendor-badge" hidden></span>
         <label class="btn upload-btn">
           CSV 업로드

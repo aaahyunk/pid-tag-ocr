@@ -8,6 +8,7 @@
   let grammar = null;
   let rows = []; // parsed original CSV rows (objects with x,y,w,h,rot,conf,raw)
   let vendor = null;
+  let currentFileName = null;
   let decodeResult = null; // {records, layerCount, typeCount, nDetections, nTagCandidates}
   let review = new Map(); // rowIndex -> { value, reviewed } for tag-candidate rows
   let queueOrder = []; // rowIndex list of records needing review, original order
@@ -19,6 +20,7 @@
   const fileInput = $("fileInput");
   const downloadBtn = $("downloadBtn");
   const vendorBadge = $("vendorBadge");
+  const fileNameBadge = $("fileNameBadge");
   const emptyState = $("emptyState");
   const loadStatus = $("loadStatus");
   const dashboard = $("dashboard");
@@ -68,6 +70,7 @@
       const text = String(reader.result);
       rows = PidGrammar.parseCSVObjects(text);
       vendor = /^V\d{2}/.test(file.name) ? file.name.slice(0, 3) : null;
+      currentFileName = file.name;
       runDecode();
     };
     reader.onerror = () => {
@@ -87,6 +90,9 @@
 
     vendorBadge.hidden = false;
     vendorBadge.textContent = vendor ? "VENDOR " + vendor : "VENDOR 미지정 (전체 탐색)";
+    fileNameBadge.hidden = false;
+    fileNameBadge.textContent = currentFileName;
+    fileNameBadge.title = currentFileName;
     emptyState.hidden = true;
     dashboard.hidden = false;
     tableSection.hidden = false;
