@@ -42,6 +42,17 @@ def test_never_fabricate():
     assert d2.confident is False
 
 
+def test_reject_reason():
+    G = HierarchicalGrammar()
+    valid_reasons = {"sparse", "truncated", "variant_conflict", "unknown"}
+    d = G.decode("QZXKW-999999")
+    assert d.layer == "reject" and d.confident is False
+    assert d.reject_reason in valid_reasons
+    # confident decodes never carry a reject reason
+    d2 = G.decode("PIT-384220")
+    assert d2.confident and d2.reject_reason == ""
+
+
 def test_mask_competition_direction():
     G = HierarchicalGrammar()
     # a misread with fewer digits must not be validated as-is

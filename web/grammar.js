@@ -448,6 +448,40 @@
       return null;
     }
 
+    // Classify WHY Never-Fabricate rejected this token, for human-review triage.
+    // Diagnostic only -- computed after decode() has already given up, so it never
+    // influences confident/layer. Mirrors grammar.py::_reject_reason exactly.
+    //   variant_conflict  structure is known (ISA letter form, or an induced
+    //                     vendor/project mask) but this instance's characters
+    //                     disagree with it and could not be repaired confidently.
+    //   truncated         raw's own shape has no support, but it lines up as a
+    //                     prefix/suffix of a longer known mask for this vendor --
+    //                     suggests the OCR box clipped part of the tag.
+    //   sparse            raw's shape has no support at all: no matching vendor
+    //                     mask, and no longer mask it could be a fragment of.
+    //   unknown           fallback when there is no vendor context to reason with.
+    _rejectReason(raw, tt, vends) {
+      if (!vends || vends.length === 0) return "unknown";
+
+      if (tt.type === "instrument_tag") {
+        const parsed = parseInstrument(raw, this.isa);
+        if (parsed && !parsed.isaValid) return "variant_conflict";
+      }
+
+      const m = mask(raw);
+      if (vends.some((v) => this.slots.has(keyOf(v, m)))) return "variant_conflict";
+
+      for (const v of vends) {
+        for (const key of this.slots.keys()) {
+          const [vv, gm] = splitKey(key);
+          if (vv !== v || gm.length <= m.length) continue;
+          if (gm.startsWith(m) || gm.endsWith(m)) return "truncated";
+        }
+      }
+
+      return "sparse";
+    }
+
     _repairCrossMask(raw, vendor, maxEdits) {
       maxEdits = maxEdits === undefined ? 3 : maxEdits;
       const m = mask(raw);
@@ -590,12 +624,13 @@
       }
 
       // Never Fabricate
-      return decoded(raw, raw, "reject", false, tt.type, "no confident resolution");
+      const reason = this._rejectReason(raw, tt, vends);
+      return decoded(raw, raw, "reject", false, tt.type, "no confident resolution", reason);
     }
   }
 
-  function decoded(raw, decodedVal, layer, confident, tokenType, note) {
-    return { raw, decoded: decodedVal, layer, confident, tokenType, note };
+  function decoded(raw, decodedVal, layer, confident, tokenType, note, rejectReason) {
+    return { raw, decoded: decodedVal, layer, confident, tokenType, note, rejectReason: rejectReason || "" };
   }
 
   // ============================================================
@@ -611,6 +646,7 @@
     const records = [];
     const layerCount = new Map();
     const typeCount = new Map();
+    const rejectReasonCount = new Map();
     rows.forEach((row, rowIndex) => {
       const raw = (row.raw || "").trim().toUpperCase();
       const tt = classify(raw);
@@ -618,6 +654,9 @@
       if (!tt.isTag) return;
       const d = grammar.decode(raw, vendor, drawingVocab);
       layerCount.set(d.layer, (layerCount.get(d.layer) || 0) + 1);
+      if (d.layer === "reject") {
+        rejectReasonCount.set(d.rejectReason, (rejectReasonCount.get(d.rejectReason) || 0) + 1);
+      }
       records.push({
         rowIndex,
         raw,
@@ -626,6 +665,7 @@
         type: d.tokenType,
         confident: d.confident,
         note: d.note,
+        rejectReason: d.rejectReason,
         orig: row,
       });
     });
@@ -633,6 +673,7 @@
       records,
       layerCount,
       typeCount,
+      rejectReasonCount,
       nDetections: rows.length,
       nTagCandidates: records.length,
     };

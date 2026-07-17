@@ -76,7 +76,8 @@ async function main() {
       p.raw === j.raw &&
       p.decoded === j.decoded &&
       p.layer === j.layer &&
-      Boolean(p.confident) === Boolean(j.confident);
+      Boolean(p.confident) === Boolean(j.confident) &&
+      (p.reject_reason || "") === (j.rejectReason || "");
     if (!same) {
       mismatches.push({
         idx: i,
@@ -87,6 +88,8 @@ async function main() {
         js_layer: j.layer,
         py_confident: p.confident,
         js_confident: j.confident,
+        py_reason: p.reject_reason || "",
+        js_reason: j.rejectReason || "",
       });
     }
   }
@@ -102,11 +105,11 @@ async function main() {
   } else {
     console.log(`\n✗ MISMATCH -- ${mismatches.length} / ${n} tokens differ:\n`);
     console.log(
-      "idx | raw | py_decoded -> js_decoded | py_layer -> js_layer | py_conf -> js_conf"
+      "idx | raw | py_decoded -> js_decoded | py_layer -> js_layer | py_conf -> js_conf | py_reason -> js_reason"
     );
     for (const m of mismatches) {
       console.log(
-        `${m.idx} | ${m.raw} | ${m.py_decoded} -> ${m.js_decoded} | ${m.py_layer} -> ${m.js_layer} | ${m.py_confident} -> ${m.js_confident}`
+        `${m.idx} | ${m.raw} | ${m.py_decoded} -> ${m.js_decoded} | ${m.py_layer} -> ${m.js_layer} | ${m.py_confident} -> ${m.js_confident} | ${m.py_reason} -> ${m.js_reason}`
       );
     }
     process.exit(1);

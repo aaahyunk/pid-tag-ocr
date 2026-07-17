@@ -15,6 +15,26 @@
   let queuePos = 0;
   let currentFilter = "all";
 
+  // reject_reason -> {label, desc}, mirrors grammar.py::_reject_reason categories
+  const REASON_INFO = {
+    sparse: {
+      label: "문법 미형성 (희소 태그)",
+      desc: "이 모양의 태그가 학습 데이터에서 충분히 반복되지 않아 아직 문법 규칙이 만들어지지 않았습니다.",
+    },
+    truncated: {
+      label: "검출 단계 절단 의심",
+      desc: "이 벤더의 더 긴 태그 형태 앞/뒤 일부와 일치합니다 — OCR 박스가 태그 일부를 잘라냈을 수 있습니다.",
+    },
+    variant_conflict: {
+      label: "표준·문법 충돌 변형",
+      desc: "형태 자체는 알려져 있지만(ISA 표준 또는 벤더 문법), 실제 문자가 규칙과 어긋나 자동 교정하지 못했습니다.",
+    },
+    unknown: {
+      label: "미분류",
+      desc: "참조할 벤더 문법이 없어 사유를 특정하지 못했습니다.",
+    },
+  };
+
   // ---- DOM refs ----
   const $ = (id) => document.getElementById(id);
   const fileInput = $("fileInput");
@@ -35,6 +55,8 @@
   const queueFill = $("queueFill");
   const queueCount = $("queueCount");
   const queueChip = $("queueChip");
+  const queueReasonLabel = $("queueReasonLabel");
+  const queueReasonDesc = $("queueReasonDesc");
   const queueRaw = $("queueRaw");
   const queueInput = $("queueInput");
   const approveBtn = $("approveBtn");
@@ -170,6 +192,10 @@
       const chip = document.createElement("span");
       chip.className = "chip " + (isAuto ? "green" : "red");
       chip.textContent = isAuto ? "자동 확정" : "검토 필요";
+      if (!isAuto && rec.rejectReason) {
+        const info = REASON_INFO[rec.rejectReason] || REASON_INFO.unknown;
+        chip.title = info.label + " — " + info.desc;
+      }
       tdStatus.appendChild(chip);
 
       const tdRaw = document.createElement("td");
@@ -255,6 +281,9 @@
     queueFill.style.width = `${(doneCount / queueOrder.length) * 100}%`;
     queueCount.textContent = `${remaining.length}건 남음 (${doneCount}/${queueOrder.length} 처리)`;
     queueChip.textContent = rec.layer.toUpperCase() + " · NEVER FABRICATE";
+    const info = REASON_INFO[rec.rejectReason] || REASON_INFO.unknown;
+    queueReasonLabel.textContent = info.label;
+    queueReasonDesc.textContent = info.desc;
     queueRaw.textContent = rec.raw;
     queueInput.value = review.get(rowIndex).value;
     queueInput.focus();

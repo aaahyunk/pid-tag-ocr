@@ -49,6 +49,8 @@ class Decoded:
     confident: bool
     token_type: str = ""
     note: str = ""
+    reject_reason: str = ""   # set only when layer == "reject":
+                               #   sparse | truncated | variant_conflict | unknown
 
 
 class HierarchicalGrammar:
@@ -140,6 +142,45 @@ class HierarchicalGrammar:
         if len(cands) == 1:
             return cands.pop()
         return None
+
+    # ---- reject-reason classification (diagnostic only, never gates a decision) ----
+    def _reject_reason(self, raw: str, tt, vends: list[str]) -> str:
+        """
+        Classify WHY Never-Fabricate rejected this token, for human-review triage.
+        Purely informational -- computed only after decode() has already given up,
+        so it never influences confident/layer.
+
+            variant_conflict  structure is known (ISA letter form, or an induced
+                               vendor/project mask) but this instance's characters
+                               disagree with it and could not be repaired confidently.
+            truncated         raw's own shape has no support, but it lines up as a
+                               prefix/suffix of a longer known mask for this vendor --
+                               suggests the OCR box clipped part of the tag.
+            sparse            raw's shape has no support at all: no matching vendor
+                               mask, and no longer mask it could be a fragment of.
+                               The induced grammar simply never formed a rule here.
+            unknown           fallback when there is no vendor context to reason with.
+        """
+        if not vends:
+            return "unknown"
+
+        if tt.type == "instrument_tag":
+            parsed = parse_instrument(raw, self.isa)
+            if parsed and not parsed.isa_valid:
+                return "variant_conflict"
+
+        m = mask(raw)
+        if any((v, m) in self.slots for v in vends):
+            return "variant_conflict"
+
+        for v in vends:
+            for vv, gm in self.slots:
+                if vv != v or len(gm) <= len(m):
+                    continue
+                if gm.startswith(m) or gm.endswith(m):
+                    return "truncated"
+
+        return "sparse"
 
     def _repair_cross_mask(self, raw: str, vendor: str, max_edits: int = 3):
         """
@@ -260,7 +301,8 @@ class HierarchicalGrammar:
                 return Decoded(raw, raw, "isa", True, tt.type, "ISA form ok")
 
         # Never Fabricate
-        return Decoded(raw, raw, "reject", False, tt.type, "no confident resolution")
+        reason = self._reject_reason(raw, tt, vends)
+        return Decoded(raw, raw, "reject", False, tt.type, "no confident resolution", reason)
 
     def _confuse(self, s: str, maxsub: int = 2, cap: int = 1500) -> set:
         out = {s}

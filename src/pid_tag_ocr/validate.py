@@ -55,6 +55,7 @@ def run(cache_path: str, gold_path: str | None = None,
     items, records = [], []
     layer_count = collections.Counter()
     type_count = collections.Counter()
+    reject_reason_count = collections.Counter()
 
     for r in rows:
         raw = r["raw"].strip().upper()
@@ -64,13 +65,15 @@ def run(cache_path: str, gold_path: str | None = None,
             continue
         d = G.decode(raw, vendor=vendor, drawing_vocab=draw_vocab)
         layer_count[d.layer] += 1
+        if d.layer == "reject":
+            reject_reason_count[d.reject_reason] += 1
         g = gold.get(raw)
         items.append(Item(raw=raw, decoded=d.decoded,
                           confident=d.confident, gold=g))
         records.append({
             "raw": raw, "decoded": d.decoded, "layer": d.layer,
             "type": d.token_type, "confident": int(d.confident),
-            "note": d.note, "gold": g or "",
+            "note": d.note, "reject_reason": d.reject_reason, "gold": g or "",
         })
 
     report = evaluate(items)
@@ -91,6 +94,7 @@ def run(cache_path: str, gold_path: str | None = None,
         "n_tag_candidates": len(items),
         "token_types": dict(type_count),
         "layer_contribution": dict(layer_count),
+        "reject_reasons": dict(reject_reason_count),
         "corrections": {"total": len(reps), "digits_up": up, "digits_down": down},
         "metrics": report.as_dict(),
         "metrics_pretty": report.pretty(),
@@ -113,6 +117,8 @@ def main():
     print(f"detections : {res['n_detections']}  tag candidates: {res['n_tag_candidates']}")
     print(f"types      : {res['token_types']}")
     print(f"layers     : {res['layer_contribution']}")
+    if res["reject_reasons"]:
+        print(f"reject why : {res['reject_reasons']}")
     c = res["corrections"]
     arrow = "OK" if c["digits_down"] == 0 else "CHECK"
     print(f"corrections: {c['total']}  (digits up {c['digits_up']} / down {c['digits_down']})  [{arrow}]")

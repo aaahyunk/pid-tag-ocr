@@ -144,6 +144,13 @@ tbody tr.s-auto td.decoded-cell.changed{ color:var(--green); }
   align-self:flex-start; font-family:var(--f-mono); font-size:.65rem; padding:.2rem .55rem; border-radius:10px;
   background:rgba(229,56,58,.2); color:var(--red); font-weight:700; letter-spacing:.03em;
 }
+.queue-reason{
+  display:flex; flex-direction:column; gap:.2rem; padding:.55rem .7rem; border-left:2px solid var(--amber);
+  background:rgba(245,166,35,.06); border-radius:0 3px 3px 0;
+}
+.queue-reason-label{ font-family:var(--f-mono); font-size:.72rem; font-weight:700; color:var(--amber); letter-spacing:.02em; }
+.queue-reason-desc{ font-size:.76rem; color:var(--ink); line-height:1.5; }
+
 .queue-label{
   font-family:var(--f-mono); font-size:.65rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
   margin-top:.4rem; display:flex; flex-direction:column; gap:.25rem;
