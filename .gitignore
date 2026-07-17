@@ -1,0 +1,17 @@
+# real drawing data -- not for the public repo
+cache/
+cache_holdout/
+gold/
+
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# editor/OS
+.DS_Store
+
+# local tooling
+.claude/
+node_modules/

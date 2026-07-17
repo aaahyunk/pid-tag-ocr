@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P&amp;ID 태그 관제반 — pid_tag_ocr</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-title">
+        <span class="brand">P&amp;ID 태그 관제반</span>
+        <span class="brand-sub">4계층 문법 디코더 · 브라우저 실행 · 서버 없음</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="vendorBadge" class="vendor-badge" hidden></span>
+        <label class="btn upload-btn">
+          CSV 업로드
+          <input type="file" id="fileInput" accept=".csv" hidden />
+        </label>
+        <button id="downloadBtn" class="btn ghost" disabled>결과 다운로드</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="emptyState" class="empty-state">
+        <p class="empty-title">검출 캐시 CSV 대기 중</p>
+        <p class="empty-sub">
+          <code>x, y, w, h, rot, conf, raw</code> 형식의 캐시 파일을 업로드하면 ISA-5.1 → 벤더 → 프로젝트 → 도면,
+          4계층 문법으로 즉시 디코딩합니다. 파일명이 <code>V01_...</code>처럼 시작하면 벤더를 자동 인식합니다.
+        </p>
+        <p id="loadStatus" class="empty-sub muted">문법 데이터 불러오는 중…</p>
+      </section>
+
+      <section id="dashboard" class="dashboard" hidden>
+        <div class="gauge-card">
+          <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+          <div class="dial" id="autoDial"><div class="dial-inner"><span class="dial-num" id="autoRateNum">–</span></div></div>
+          <span class="gauge-title">자동 결정률</span>
+        </div>
+        <div class="gauge-card">
+          <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+          <span class="readout-num red" id="reviewRateNum">–</span>
+          <span class="readout-label">사람 검토율</span>
+          <span class="readout-sub" id="reviewCountSub">–</span>
+        </div>
+        <div class="gauge-card">
+          <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+          <span class="readout-num" id="totalTagsNum">–</span>
+          <span class="readout-label">전체 태그 후보</span>
+          <span class="readout-sub" id="totalDetSub">–</span>
+        </div>
+        <div class="gauge-card lamp-bank">
+          <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+          <div class="lamp-row"><span class="lamp cyan" data-layer="isa"></span>L1 ISA<b id="lampIsa">0</b></div>
+          <div class="lamp-row"><span class="lamp green" data-layer="vendor"></span>L2 벤더<b id="lampVendor">0</b></div>
+          <div class="lamp-row"><span class="lamp green" data-layer="project"></span>L3 프로젝트<b id="lampProject">0</b></div>
+          <div class="lamp-row"><span class="lamp amber" data-layer="drawing"></span>L4 도면반복<b id="lampDrawing">0</b></div>
+          <div class="lamp-row"><span class="lamp red" data-layer="reject"></span>반려<b id="lampReject">0</b></div>
+          <span class="gauge-title">계층 기여</span>
+        </div>
+      </section>
+
+      <section id="reviewBanner" class="review-banner" hidden>
+        <span id="reviewBannerText">검토 필요 0건</span>
+        <button id="openQueueBtn" class="btn">검토 큐 열기</button>
+      </section>
+
+      <section id="tableSection" class="table-section" hidden>
+        <div class="table-toolbar">
+          <div class="filter-group" role="group" aria-label="상태 필터">
+            <button class="filter-btn active" data-filter="all">전체</button>
+            <button class="filter-btn" data-filter="auto">자동 확정</button>
+            <button class="filter-btn" data-filter="review">검토 필요</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="resultTable">
+            <thead>
+              <tr><th>상태</th><th>RAW</th><th>DECODED</th><th>TYPE</th><th>LAYER</th><th></th></tr>
+            </thead>
+            <tbody id="resultTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="queueOverlay" class="queue-overlay" hidden>
+      <div class="queue-panel" role="dialog" aria-modal="true" aria-labelledby="queueTitle">
+        <div class="queue-header">
+          <h2 id="queueTitle">검토 큐</h2>
+          <button id="closeQueueBtn" class="btn ghost small">닫기</button>
+        </div>
+        <div class="queue-progress">
+          <div class="queue-bar"><div class="queue-fill" id="queueFill"></div></div>
+          <span class="queue-count" id="queueCount">0건 남음</span>
+        </div>
+        <div id="queueBody" class="queue-body">
+          <div class="queue-item">
+            <span class="queue-chip" id="queueChip">REJECT</span>
+            <label class="queue-label">RAW 인식값</label>
+            <div class="queue-raw" id="queueRaw">–</div>
+            <label class="queue-label">
+              수정 값
+              <span class="queue-hint">자동 후보 없음 · Never Fabricate — 직접 확인 후 입력</span>
+            </label>
+            <input type="text" id="queueInput" class="queue-input" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+        <div class="queue-actions">
+          <button id="approveBtn" class="dir3-btn approve">승인 · 다음<kbd>Enter</kbd></button>
+        </div>
+        <div id="queueDone" class="queue-done" hidden>
+          <p>검토 완료 — 남은 항목이 없습니다.</p>
+          <button id="closeQueueBtn2" class="btn">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="grammar.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pid_tag_ocr"
+version = "0.1.0"
+description = "Neuro-symbolic P&ID tag decoding: hierarchical ISA/vendor/project/drawing grammar with Never-Fabricate routing."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []   # pure-stdlib runtime; CPU-only, no GPU
+
+[project.scripts]
+pid-validate = "pid_tag_ocr.validate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pid_tag_ocr = ["data/*.json", "data/grammar/*.csv"]
